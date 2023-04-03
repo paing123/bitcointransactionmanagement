@@ -4,14 +4,15 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import com.anymindgroup.bitcoinmanagement.dto.TransactionDto;
 import com.anymindgroup.bitcoinmanagement.model.Transaction;
 
 public interface TransactionService {
     
-    List<TransactionDto> findByDatetimeBetween(GregorianCalendar startDatetime, GregorianCalendar endDatetime);
+	CompletableFuture<List<TransactionDto>> findByDatetimeBetween(GregorianCalendar startDatetime, GregorianCalendar endDatetime);
     
-    TransactionDto save(TransactionDto transaction) throws Exception;
+    void save(TransactionDto transaction) throws Exception;
     
 }

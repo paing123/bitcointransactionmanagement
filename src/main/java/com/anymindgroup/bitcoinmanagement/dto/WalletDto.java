@@ -21,10 +21,7 @@ import lombok.Data;
 @Data
 public class WalletDto {
     
-	private static final long serialVersionUID = 1L;
-	
-	@NotEmpty
-    private Integer walletId;
+	private Integer walletId;
     
     private GregorianCalendar datetime;
     

@@ -14,6 +14,9 @@ import javax.persistence.Table;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 
+import org.hibernate.annotations.OptimisticLockType;
+import org.hibernate.annotations.OptimisticLocking;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Data;
@@ -22,8 +25,6 @@ import lombok.Data;
 @Entity
 @Table(name = "transaction")
 public class Transaction {
-
-	private static final long serialVersionUID = 1L;
     
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

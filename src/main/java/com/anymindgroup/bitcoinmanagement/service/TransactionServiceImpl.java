@@ -1,24 +1,38 @@
 package com.anymindgroup.bitcoinmanagement.service;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import javax.annotation.PostConstruct;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.BeanDefinitionDsl.BeanSupplierContext;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.anymindgroup.bitcoinmanagement.dao.TransactionRepository;
 import com.anymindgroup.bitcoinmanagement.dao.WalletRepository;
 import com.anymindgroup.bitcoinmanagement.dto.TransactionDto;
+import com.anymindgroup.bitcoinmanagement.exception.TransferredDateException;
+import com.anymindgroup.bitcoinmanagement.exception.TransferredValueException;
+import com.anymindgroup.bitcoinmanagement.exception.WalletNotFoundException;
 import com.anymindgroup.bitcoinmanagement.model.Transaction;
 import com.anymindgroup.bitcoinmanagement.model.Wallet;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 public class TransactionServiceImpl implements TransactionService {
@@ -27,14 +41,41 @@ public class TransactionServiceImpl implements TransactionService {
     
     private final WalletRepository walletRepo;
     
+    private Queue<TransactionDto> queue = new ConcurrentLinkedQueue<>(); // use a concurrent queue for thread-safety
+
+    private ExecutorService executorService = Executors.newFixedThreadPool(5); // create a thread pool with 10 threads
+
     @Autowired
     public TransactionServiceImpl(TransactionRepository transactionRepo,WalletRepository walletRepo) {
         this.transactionRepo = transactionRepo;
         this.walletRepo = walletRepo;
     }
     
+    public void addToQueue(TransactionDto transaction) {
+        queue.offer(transaction); // add the entity to the queue
+    }
+
+    @PostConstruct
+    public void startProcessing() {
+        executorService.submit(() -> {
+            while (true) {
+            	TransactionDto entity = queue.poll(); // get the next entity from the queue
+                if (entity != null) {
+                	save(entity); // process the entity
+                } else {
+                    try {
+                        Thread.sleep(1000); // wait for 1 second if the queue is empty
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        });
+    }
+    
     @Override
-    public List<TransactionDto> findByDatetimeBetween(GregorianCalendar startDatetime, GregorianCalendar endDatetime){
+    @Async
+    public CompletableFuture<List<TransactionDto>> findByDatetimeBetween(GregorianCalendar startDatetime, GregorianCalendar endDatetime){
     	
     	List<Transaction> transList = transactionRepo.findByDatetimeBetween(startDatetime, endDatetime);
     	List<TransactionDto> transDtoList = new ArrayList<>();
@@ -60,12 +101,12 @@ public class TransactionServiceImpl implements TransactionService {
 			transDtoList.add(newTrans);
 		}
     	
-    	return transDtoList;
+    	return CompletableFuture.completedFuture(transDtoList);
     }
     
-    @Transactional
     @Override
-    public TransactionDto save(TransactionDto transaction) throws Exception {
+    @Transactional
+    public void save(TransactionDto transaction) throws Exception {
     	
     	Transaction trans = new Transaction();
     	BeanUtils.copyProperties(transaction, trans);
@@ -78,26 +119,27 @@ public class TransactionServiceImpl implements TransactionService {
     	
     	Optional<Wallet> checkWallet = walletRepo.findById(trans.getWallet().getWalletId());
     	Double totalBalance;
+    	Wallet updWallet;
     	
     	if(checkWallet.isPresent()) {
-    		Wallet updWallet = checkWallet.get();
+    		updWallet = checkWallet.get();
+    		if(trans.getTransferAmount() <= 0 ) {
+    			throw new TransferredValueException("Transferred value must not be zero or less than zero");
+    		}else if(trans.getDatetime().before(Calendar.getInstance())) {
+    			throw new TransferredDateException("Transferred date and time must not be less than current time");
+    		}
     		totalBalance = updWallet.getBalance() + trans.getTransferAmount();
     		updWallet.setDatetime(trans.getDatetime());
     		updWallet.setBalance(totalBalance);
     		walletRepo.save(updWallet);
     	}
     	else {
-    		throw new Exception("Wallet save must be first.");
+    		throw new WalletNotFoundException("Wallet is not found.");
     	}
-    	
     	trans.setTotalAmount(totalBalance);
-    	transactionRepo.save(trans);
-    	transaction.setTransId(trans.getTransId());
-    	transaction.setTotalAmount(totalBalance);
-    	
-        return transaction;
+    	transactionRepo.save(trans);	
     }
-    
+       
     private List<GregorianCalendar> getEndOfHourIntervals(GregorianCalendar startDate, GregorianCalendar endDate) {
         List<GregorianCalendar> intervals = new ArrayList<>();
         

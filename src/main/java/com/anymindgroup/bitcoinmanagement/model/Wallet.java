@@ -22,8 +22,6 @@ import lombok.Data;
 @Entity
 @Table(name = "wallet")
 public class Wallet {
-    
-	private static final long serialVersionUID = 1L;
 	
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

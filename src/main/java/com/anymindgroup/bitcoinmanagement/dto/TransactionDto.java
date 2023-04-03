@@ -7,10 +7,13 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 
 import com.anymindgroup.bitcoinmanagement.model.Wallet;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.Data;
 
@@ -18,18 +21,15 @@ import lombok.Data;
 public class TransactionDto {
     
     private Integer transId;
-    
+
     private GregorianCalendar startDatetime;
 
     private GregorianCalendar endDatetime;
     
     private GregorianCalendar datetime;
     
-    @NotEmpty(message = "Transfered Amount should not be empty.")
-    @Min(value = 1, message = "Transfered Amount should not be less than 1.")
     private Double transferAmount;
     
-    @Min(value = 0, message = "Total Amount should not be less than 0.")
     private Double totalAmount;
     
     private Wallet wallet;
