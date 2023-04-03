@@ -26,18 +26,6 @@ public class ControllerAdvisor extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(message, HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(NullPointerException.class)
-    public ResponseEntity<Object> handleNodataFoundException(
-    		NullPointerException ex, WebRequest request) {
-
-    	ErrorMessage message = new ErrorMessage(HttpStatus.NOT_FOUND.value(), 
-												new Date(), 
-												"Data must not be null", 
-												request.getDescription(false));	
-        
-        return new ResponseEntity<>(message, HttpStatus.NOT_FOUND);
-    }
-    
     @ExceptionHandler(value = TransferredValueException.class)
     public ResponseEntity<Object> handleTransferredValueException(
     		TransferredValueException ex, WebRequest request) {
@@ -60,6 +48,30 @@ public class ControllerAdvisor extends ResponseEntityExceptionHandler {
 												request.getDescription(false));
 
         return new ResponseEntity<>(message, HttpStatus.BAD_REQUEST);
+    }
+    
+    @ExceptionHandler(NullPointerException.class)
+    public ResponseEntity<Object> handleNodataFoundException(
+    		NullPointerException ex, WebRequest request) {
+
+    	ErrorMessage message = new ErrorMessage(HttpStatus.NOT_FOUND.value(), 
+												new Date(), 
+												"Data must not be null", 
+												request.getDescription(false));	
+        
+        return new ResponseEntity<>(message, HttpStatus.NOT_FOUND);
+    }
+    
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Object> handleUnexpectedException(
+    		Exception ex, WebRequest request) {
+
+    	ErrorMessage message = new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), 
+												new Date(), 
+												"Internal Server Error is occurred.", 
+												request.getDescription(false));	
+        
+        return new ResponseEntity<>(message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
         
     @Override
