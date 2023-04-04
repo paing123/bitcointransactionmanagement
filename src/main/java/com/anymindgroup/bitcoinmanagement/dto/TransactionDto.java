@@ -1,19 +1,8 @@
 package com.anymindgroup.bitcoinmanagement.dto;
 
-import java.util.Date;
 import java.util.GregorianCalendar;
 
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.format.annotation.DateTimeFormat.ISO;
-
 import com.anymindgroup.bitcoinmanagement.model.Wallet;
-import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.Data;
 

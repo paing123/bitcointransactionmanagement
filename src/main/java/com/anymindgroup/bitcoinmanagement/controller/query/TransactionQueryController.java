@@ -1,45 +1,39 @@
-package com.anymindgroup.bitcoinmanagement.controller;
+package com.anymindgroup.bitcoinmanagement.controller.query;
 
-import java.util.List;
+
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
-
-import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.anymindgroup.bitcoinmanagement.dto.TransactionDto;
-import com.anymindgroup.bitcoinmanagement.service.TransactionService;
-
-import lombok.extern.slf4j.Slf4j;
-
+import com.anymindgroup.bitcoinmanagement.service.TransactionQueryService;
 
 @RestController
 @RequestMapping("/restapi")
-public class TransactionController {
+@ConditionalOnProperty(name = "app.write.enabled", havingValue = "true")
+public class TransactionQueryController {
 	
-    TransactionService transactionService;
+    TransactionQueryService transactionQueryService;
     
     @Autowired
-    public TransactionController(TransactionService transactionService) {
-        this.transactionService = transactionService;
+    public TransactionQueryController(TransactionQueryService transactionQueryService) {
+        this.transactionQueryService = transactionQueryService;
     }
     
-    @GetMapping(value="/transactions")
-    public @ResponseBody CompletableFuture<ResponseEntity> findByDatetimeBetween(@RequestBody @Valid TransactionDto transaction) throws Exception{
+	@SuppressWarnings("rawtypes")
+	@GetMapping(value="/transactions")
+    public @ResponseBody CompletableFuture<ResponseEntity> findByDatetimeBetween(@RequestBody TransactionDto transaction) throws Exception{
         
-    	CompletableFuture<ResponseEntity> response = transactionService.findByDatetimeBetween(transaction.getStartDatetime()
+    	CompletableFuture<ResponseEntity> response = transactionQueryService.findByDatetimeBetween(transaction.getStartDatetime()
 																	, transaction.getEndDatetime())
 													.<ResponseEntity>thenApply(ResponseEntity::ok);
-													//.exceptionally(handleGetTransFailure);
     	return response;
     }
     
@@ -84,11 +78,4 @@ public class TransactionController {
 //            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 //        }
 //    }
-             
-    @PostMapping(value="/transactions")
-	public @ResponseBody ResponseEntity saveTransaction(@RequestBody TransactionDto transaction) throws Exception{  	
-    	
-    	transactionService.save(transaction);
-    	return ResponseEntity.status(HttpStatus.OK).build();
-	}
 }
