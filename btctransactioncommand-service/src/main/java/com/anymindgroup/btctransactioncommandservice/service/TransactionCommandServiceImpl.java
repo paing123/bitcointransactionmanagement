@@ -1,6 +1,6 @@
 package com.anymindgroup.btctransactioncommandservice.service;
 
-import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -25,73 +25,75 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class TransactionCommandServiceImpl implements TransactionCommandService {
-	
+
 	private final RabbitTemplate rabbitTemplate;
-	
-    private final TransactionCommandRepository transactionRepo;
-    
-    @Value("${spring.rabbitmq.exchange}")
-    private String exchange;
 
-    @Value("${spring.rabbitmq.routingkey}")
-    private String routingkey;
-    
-    private Queue<TransactionDto> queue = new ConcurrentLinkedQueue<>(); // use a concurrent queue for thread-safety
+	private final TransactionCommandRepository transactionRepo;
 
-    private ExecutorService executorService = Executors.newFixedThreadPool(10); // create a thread pool with 10 threads
-    
-    public void addToQueue(TransactionDto transaction) {
-        queue.offer(transaction); // add the entity to the queue
-    }
+	@Value("${spring.rabbitmq.exchange}")
+	private String exchange;
 
-    @PostConstruct
-    public void startProcessing() {
-        executorService.submit(() -> {
-            while (true) {
-            	TransactionDto entity = queue.poll(); // get the next entity from the queue
-                if (entity != null) {
-                	save(entity); // process the entity
-                } else {
-                    try {
-                        Thread.sleep(1000); // wait for 1 second if the queue is empty
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-            }
-        });
-    }
-    
-    @Override
-    @Transactional
-    public void save(TransactionDto transactionDto) throws Exception {
-    	
-    	Transaction newTransaction = new Transaction();
-    	BeanUtils.copyProperties(transactionDto, newTransaction);
-    	
-    	if(newTransaction.getTransferAmount() <= 0 ) {
+	@Value("${spring.rabbitmq.routingkey}")
+	private String routingkey;
+
+	private Queue<TransactionDto> queue = new ConcurrentLinkedQueue<>(); // use a concurrent queue for thread-safety
+
+	private ExecutorService executorService = Executors.newFixedThreadPool(10); // create a thread pool with 10 threads
+
+	public void addToQueue(TransactionDto transaction) {
+		queue.offer(transaction); // add the entity to the queue
+	}
+
+	@PostConstruct
+	public void startProcessing() {
+		executorService.submit(() -> {
+			while (true) {
+				TransactionDto entity = queue.poll(); // get the next entity from the queue
+				if (entity != null) {
+					save(entity); // process the entity
+				} else {
+					try {
+						Thread.sleep(1000); // wait for 1 second if the queue is empty
+					} catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+					}
+				}
+			}
+		});
+	}
+
+	@Override
+	@Transactional
+	public TransactionDto save(TransactionDto transactionDto) throws Exception {
+
+		Transaction newTransaction = new Transaction();
+		BeanUtils.copyProperties(transactionDto, newTransaction);
+
+		if (newTransaction.getTransferAmount() <= 0) {
 			throw new TransferredValueException("Transferred value must not be zero or less than zero");
-		}else if(newTransaction.getDatetime().before(Calendar.getInstance())) {
+		} else if (newTransaction.getDatetime().before(GregorianCalendar.getInstance())) {
 			throw new TransferredDateException("Transferred date and time must not be less than current time");
 		}
-    	
-    	Transaction transaction = transactionRepo.findFirstByOrderByTransIdDesc();
-    	Double totalAmount;
-    	//check existing transaction
-    	if(transaction == null) {
-    		totalAmount = newTransaction.getTransferAmount();
-    	}else {
-    		totalAmount = transaction.getTotalAmount() + newTransaction.getTransferAmount();
-    	}
-    	
-    	newTransaction.setTotalAmount(totalAmount);
-    	transactionRepo.save(newTransaction);
-    	this.sendMessage(newTransaction);
-    }
-    
-    private void sendMessage(Transaction transaction){
-        rabbitTemplate.convertAndSend(exchange,routingkey, transaction);
-    }
-    
-    
+
+		Transaction transaction = transactionRepo.findFirstByOrderByTransIdDesc();
+		Double totalAmount;
+		// check existing transaction
+		if (transaction == null) {
+			totalAmount = newTransaction.getTransferAmount();
+		} else {
+			totalAmount = transaction.getTotalAmount() + newTransaction.getTransferAmount();
+		}
+
+		newTransaction.setTotalAmount(totalAmount);
+		newTransaction = transactionRepo.save(newTransaction);
+
+		BeanUtils.copyProperties(newTransaction, transactionDto);
+		this.sendMessage(newTransaction);
+		return transactionDto;
+	}
+
+	private void sendMessage(Transaction transaction) {
+		rabbitTemplate.convertAndSend(exchange, routingkey, transaction);
+	}
+
 }

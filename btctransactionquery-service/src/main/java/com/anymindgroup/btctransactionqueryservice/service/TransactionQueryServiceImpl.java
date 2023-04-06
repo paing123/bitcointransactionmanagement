@@ -18,8 +18,8 @@ import com.anymindgroup.btctransactionqueryservice.model.Transaction;
 
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class TransactionQueryServiceImpl implements TransactionQueryService {
 
 	private final TransactionQueryRepository transactionRepo;

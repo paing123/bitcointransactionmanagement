@@ -15,18 +15,18 @@ import lombok.Data;
 @Entity
 @Table(name = "transaction")
 public class Transaction {
-    
-	@Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    private Long transId;
-    
-    private GregorianCalendar datetime;
-    
-    private Double transferAmount;
 
-    private Double totalAmount;
-     
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long transId;
+
+	private GregorianCalendar datetime;
+
+	private Double transferAmount;
+
+	private Double totalAmount;
+
 	@Column(nullable = true)
-    private String status;
+	private String status;
 
 }

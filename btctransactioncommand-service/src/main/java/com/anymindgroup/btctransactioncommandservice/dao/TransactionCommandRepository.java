@@ -7,6 +7,6 @@ import com.anymindgroup.btctransactioncommandservice.model.Transaction;
 
 @Repository
 public interface TransactionCommandRepository extends JpaRepository<Transaction, Long> {
-	
+
 	Transaction findFirstByOrderByTransIdDesc();
 }

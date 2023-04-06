@@ -5,6 +5,6 @@ import com.anymindgroup.btctransactioncommandservice.dto.TransactionDto;
 
 public interface TransactionCommandService {
     
-   void save(TransactionDto transaction) throws Exception;
+   TransactionDto save(TransactionDto transaction) throws Exception;
     
 }

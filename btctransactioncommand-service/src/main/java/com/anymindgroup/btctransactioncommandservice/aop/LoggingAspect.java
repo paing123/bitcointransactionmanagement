@@ -15,26 +15,26 @@ import lombok.extern.slf4j.Slf4j;
 public class LoggingAspect {
 
 	@Before("execution(* com.anymindgroup.btctransactioncommandservice..*(..)))")
-    public void getlogMethodBeforeExecution(JoinPoint joinPoint) throws Throwable {
-        
+	public void getlogMethodBeforeExecution(JoinPoint joinPoint) throws Throwable {
+
 		MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
-		//Get intercepted method details
+		// Get intercepted method details
 		String className = methodSignature.getDeclaringType().getSimpleName();
 		String methodName = methodSignature.getName();
-        
-        //Log method
-        log.info("Bitcoin management Logging AOP : Before "+className+"."+methodName);
-    }
-	
+
+		// Log method
+		log.info("Bitcoin management Logging AOP : Before " + className + "." + methodName);
+	}
+
 	@After("execution(* com.anymindgroup.btctransactioncommandservice..*(..)))")
-    public void getlogMethodAfterExecution(JoinPoint joinPoint) throws Throwable {
-        
+	public void getlogMethodAfterExecution(JoinPoint joinPoint) throws Throwable {
+
 		MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
-		//Get intercepted method details
+		// Get intercepted method details
 		String className = methodSignature.getDeclaringType().getSimpleName();
 		String methodName = methodSignature.getName();
-        
-        //Log method
-		log.info("Bitcoin management Logging AOP : After "+className+"."+methodName);
-    }
+
+		// Log method
+		log.info("Bitcoin management Logging AOP : After " + className + "." + methodName);
+	}
 }
